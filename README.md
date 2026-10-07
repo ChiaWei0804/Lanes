@@ -70,8 +70,10 @@ node check.cjs             # self-checks: Lanes.exe --self-check, then the scrip
 | `vendor/btr/` | BTR 2026.9.29.1-d1 page files (commit b16b10f), unmodified, MIT license in `vendor/btr/LICENSE` |
 | `version.json` | Version and the GitHub repository checked for updates |
 | `docs/` | The screenshots in this README |
+| `release-notes/` | The notes of each release |
+| `.github/` | Build and release workflow; daily check for BTR updates |
 
-To publish version X.Y.Z: set it in `version.json`, run `node build.cjs --release`, create a GitHub release tagged `vX.Y.Z`, and attach `dist/Lanes-X.Y.Z.zip`. The in-app update downloads the same file.
+GitHub Actions builds and checks every push (`.github/workflows/build.yml`). To publish version X.Y.Z: set it in `version.json`, write `release-notes/X.Y.Z.md`, then push the tag `vX.Y.Z`; the workflow builds `Lanes-X.Y.Z.zip` and creates the release. The in-app update downloads the same file. Once a day `.github/workflows/btr-watch.yml` opens an issue when BTR's desktop edition changes a file in `vendor/btr/`.
 
 ## Credits
 

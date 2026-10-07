@@ -70,8 +70,10 @@ node check.cjs             # 自我檢查：Lanes.exe --self-check，再檢查�
 | `vendor/btr/` | BTR 2026.9.29.1-d1 的頁面檔（commit b16b10f），未修改，MIT 授權見 `vendor/btr/LICENSE` |
 | `version.json` | 版本號，以及檢查更新用的 GitHub repository |
 | `docs/` | 這份 README 裡的截圖 |
+| `release-notes/` | 每個版本的發行說明 |
+| `.github/` | 建置與發布的工作流程；每天檢查 BTR 更新 |
 
-發布 X.Y.Z 版：在 `version.json` 改版本號，執行 `node build.cjs --release`，在 GitHub 建立標籤為 `vX.Y.Z` 的發行版，並附上 `dist/Lanes-X.Y.Z.zip`。程式內更新下載的也是這個檔案。
+每次推送都由 GitHub Actions 建置並檢查（`.github/workflows/build.yml`）。發布 X.Y.Z 版：在 `version.json` 改版本號、寫好 `release-notes/X.Y.Z.md`，再推送標籤 `vX.Y.Z`；工作流程會產生 `Lanes-X.Y.Z.zip` 並建立發行版。程式內更新下載的也是這個檔案。`.github/workflows/btr-watch.yml` 每天檢查一次，BTR 桌面版改到 `vendor/btr/` 裡的檔案時會開一個 issue。
 
 ## 致謝
 

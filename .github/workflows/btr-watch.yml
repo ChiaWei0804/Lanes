@@ -1,0 +1,15 @@
+# Once a day: when BTR's desktop edition changes a file Lanes vendors, open an issue here (once per upstream commit).
+name: btr-watch
+on:
+  schedule: [{ cron: '17 1 * * *' }]
+  workflow_dispatch:
+permissions: { contents: read, issues: write }
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node .github/btr-watch.cjs
+        env: { GH_TOKEN: '${{ github.token }}' }
