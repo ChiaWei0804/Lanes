@@ -6,9 +6,9 @@ Lanes 是一個可攜式的 Windows 小程式，讓官方嗶哩嗶哩桌面客�
 
 平常看 B 站常常卡，BTR 的出現確實解決了這個問題。因為不想把它裝進嗶哩嗶哩客戶端裡，所以用 Claude 做了這個獨立的小程式。
 
-**加速功能不是 Lanes 做的**，而是 LouieTang（[MrTangLuyao](https://github.com/MrTangLuyao)）開發的 **[Bilibili-thread-ripper（BTR）](https://github.com/MrTangLuyao/Bilibili-thread-ripper)**。Lanes 原封不動地執行 BTR 桌面版 **[Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)** 的頁面程式碼，只另外加上一個獨立的操作視窗。Lanes 是非官方的第三方專案，並非 BTR 作者製作或認可。
+**加速功能不是 Lanes 做的**，而是 LouieTang（[MrTangLuyao](https://github.com/MrTangLuyao)）開發的 **[Bilibili-thread-ripper（BTR）](https://github.com/MrTangLuyao/Bilibili-thread-ripper)**。Lanes 執行 BTR 桌面版 **[Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)** 的頁面程式碼，只對自動線程數做了兩處小修正（列在 `btr-patches.cjs`），另外加上一個獨立的操作視窗。Lanes 是非官方的第三方專案，並非 BTR 作者製作或認可。
 
-**使用的 BTR 版本：** Bilibili-thread-ripper-desktop **2026.9.29.1-d1**（[commit b16b10f](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop/commit/b16b10f1122cc3a942832d0baa4ab3f1b08493b3)）。Lanes 跟隨的是 BTR 的桌面版，不是瀏覽器版。
+**使用的 BTR 版本：** Bilibili-thread-ripper-desktop **2026.10.7.2-d1**（[commit 2d24de0](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop/commit/2d24de0717df92dc0c719d601fc5b08ad392423b)）。Lanes 跟隨的是 BTR 的桌面版，不是瀏覽器版。
 
 Lanes 不會修改嗶哩嗶哩客戶端的任何檔案，關掉 Lanes，客戶端就回到原生下載。
 
@@ -22,7 +22,7 @@ Lanes 不會修改嗶哩嗶哩客戶端的任何檔案，關掉 Lanes，客戶�
 ## 功能
 
 - 即時的加速下載速度，也可以切換成每個線程的速度（滑鼠停在格子上會顯示 CDN 節點）。
-- 加速開關與線程數：自動（BTR 在 8–32 之間自己調整）或 8 / 16 / 32 / 64。
+- 加速開關與線程數：自動（BTR 在 8–64 之間自己調整）或 8 / 16 / 32 / 64。
 - 開啟 Lanes 不會開啟嗶哩嗶哩。Lanes 執行時，你照平常方式開啟的嗶哩嗶哩會自動接上（剛開啟的幾秒內會重開一次，讓 Lanes 能接上）。
 - 在 Lanes 之前就已開啟的嗶哩嗶哩也會接上：自動重新啟動它（會中斷正在播放的影片）。預設開啟，可以在設定中關閉。
 - 開機時啟動、關閉視窗時縮到通知區域繼續執行。
@@ -67,10 +67,12 @@ node check.cjs             # 自我檢查：Lanes.exe --self-check，再檢查�
 | `app/page/*.js` | 與 BTR 一起注入播放頁的程式碼：頁面判斷、租約、每執行緒測速、狀態讀取 |
 | `app/SelfCheck.cs`、`check.cjs` | 自我檢查 |
 | `app/lang/*.json` | 介面文字：英文、繁體中文、簡體中文 |
-| `vendor/btr/` | BTR 2026.9.29.1-d1 的頁面檔（commit b16b10f），未修改，MIT 授權見 `vendor/btr/LICENSE` |
+| `vendor/btr/` | BTR 2026.10.7.2-d1 的頁面檔（commit 2d24de0），含 `btr-patches.cjs` 裡 Lanes 的修正，MIT 授權見 `vendor/btr/LICENSE` |
 | `version.json` | 版本號，以及檢查更新用的 GitHub repository |
 | `docs/` | 這份 README 裡的截圖 |
 | `release-notes/` | 每個版本的發行說明 |
+| `btr-patches.cjs` | Lanes 對 BTR 程式碼的兩處修正，已套用在 `vendor/btr/`；更新 BTR 後執行 `node btr-patches.cjs` 重新套用 |
+| `tools/live-check.mjs` | 發版前在真實客戶端做的實機檢查（Lanes 已連線、線程數為自動） |
 | `.github/` | 建置與發布的工作流程；每天檢查 BTR 更新 |
 
 每次推送都由 GitHub Actions 建置並檢查（`.github/workflows/build.yml`）。發布 X.Y.Z 版：在 `version.json` 改版本號、寫好 `release-notes/X.Y.Z.md`，再推送標籤 `vX.Y.Z`；工作流程會產生 `Lanes-X.Y.Z.zip` 並建立發行版。程式內更新下載的也是這個檔案。`.github/workflows/btr-watch.yml` 每天檢查一次，BTR 桌面版改到 `vendor/btr/` 裡的檔案時會開一個 issue。

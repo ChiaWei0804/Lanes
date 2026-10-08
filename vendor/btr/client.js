@@ -19,7 +19,12 @@
     const on = (name, handler) => element.addEventListener(name, handler, { signal: events.signal });
     let started = false; // playing since the last load or seek
     on("emptied", () => { started = false; newSession(); });
-    on("seeking", () => { started = false; newSession(); });
+    on("seeking", () => {
+      // Lanes patch (btr-patches.cjs): a seek inside the buffer is not a new start; playback goes on reporting.
+      const ranges = element.buffered, at = element.currentTime;
+      for (let i = 0; i < ranges.length; i++) if (ranges.start(i) <= at && at < ranges.end(i)) return;
+      started = false; newSession();
+    });
     on("playing", () => { started = true; });
     on("waiting", () => { if (started && autoOn() && !element.seeking && !element.paused) auto.stall("播放卡了一下"); });
     on("timeupdate", () => {

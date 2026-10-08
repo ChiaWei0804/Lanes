@@ -42,10 +42,10 @@ assert.equal(vm.runInNewContext(POLL_SCRIPT, {}), null, "a page without BTR");
 console.log("cdn region: ok");
 
 // ---- the injected bundle: only in the main player page, once; turns BTR off when the lease runs out ----
-// BTR's files go in unmodified and in its build order; the rest of the script runs here without them (they need a
+// BTR's files go in as vendor/btr holds them, in its build order; the rest of the script runs here without them (they need a
 // real browser).
 const bundle = ["range-core.js", "cdn-resolver.js", "idm-downloader.js", "runtime-notices.js", "notification-view.js", "settings.js", "transport.js", "client.js"].map(vendor).join("\n;\n");
-assert.ok(INJECT.includes(bundle), "the injected script carries BTR's files unmodified, in build order");
+assert.ok(INJECT.includes(bundle), "the injected script carries vendor/btr's files as they are, in build order");
 const wrapper = INJECT.replace(bundle, "");
 const player = (href, extra) => {
   const url = new URL(href), timers = [];
@@ -89,6 +89,53 @@ assert.deepEqual(JSON.parse(JSON.stringify(applied)), [{ enabled: true, mode: "c
 openWindow();
 assert.equal(applied.length, 1, "a reload of the same window keeps BTR's stored settings");
 console.log("injected bundle: ok");
+
+// ---- Lanes' patches to BTR (btr-patches.cjs): in place, and doing what they are for ----
+const btrPatches = require("./btr-patches.cjs");
+for (const p of btrPatches.PATCHES) assert.equal(btrPatches.count(vendor(p.file), p.patched), 1, `vendor/btr/${p.file} lacks Lanes' patch: run node btr-patches.cjs, or drop the patch if BTR fixed this`);
+const sandbox = { console, URL, performance, AbortController, EventTarget, Event, location: { href: "https://bilipc.bilibili.com/player.html" } };
+const core = vm.createContext({ ...sandbox });
+for (const file of ["range-core.js", "cdn-resolver.js", "idm-downloader.js"]) vm.runInContext(vendor(file), core);
+let clock = 0;
+const controller = () => core.__BILI_IDM_DOWNLOADER_FACTORY__.createAutoConcurrency({ now: () => clock });
+{
+  // client.js on a fake <video> buffered 0-40 s: a seek inside the buffer keeps the session, one outside starts again.
+  clock = 0;
+  const auto = controller(), element = new EventTarget();
+  Object.assign(element, { isConnected: true, currentTime: 10, paused: false, seeking: false, buffered: { length: 1, start: () => 0, end: () => 40 } });
+  let scan;
+  const root = new EventTarget();
+  Object.assign(root, { ...sandbox, setInterval: f => { scan = f; return 1; },
+    __BTR_DESKTOP__: { getSettings: () => ({ enabled: true, autoConcurrency: true }), onSettings() {}, transport: { switchRoute() {}, register() {}, snapshot: () => ({ routeAcceleratedRequests: 0, generation: 0 }), restore() {} } },
+    __BTR_RUNTIME_NOTICES__: { log() {}, detach() {}, configure() {}, attach() {} }, __BTR_NOTIFICATION_VIEW__: { configure() {}, logs() {}, playback() {} },
+    __BILI_IDM_DOWNLOADER_FACTORY__: { autoConcurrency: auto },
+    biliPlayer: { getManifest: () => ({ cid: 1, bvid: "BV1" }), mediaElement: () => element, on() {} } });
+  root.globalThis = root;
+  vm.createContext(root);
+  vm.runInContext(vendor("client.js"), root);
+  scan();
+  assert.equal(auto.status().threads, 16, "a new video starts with 16 threads");
+  element.dispatchEvent(new Event("playing"));
+  for (let i = 0; i < 6; i++) { clock += 2600; element.dispatchEvent(new Event("timeupdate")); }
+  assert.deepEqual([auto.status().threads, auto.status().startup], [8, null], "back to 8 once the buffer is ahead");
+  clock += 2600; element.currentTime = 20; element.seeking = true; element.dispatchEvent(new Event("seeking"));
+  assert.deepEqual([auto.status().threads, auto.status().startup], [8, null], "a seek inside the buffer is not a new start");
+  element.seeking = false;
+  clock += 2600; element.currentTime = 45; element.seeking = true; element.dispatchEvent(new Event("seeking"));
+  assert.equal(auto.status().threads, 16, "a seek outside the buffer starts again with 16 threads");
+}
+{
+  // A start past its half minute with no buffer report since (nothing played) is over: the next session keeps the level.
+  clock = 0;
+  const auto = controller();
+  auto.newSession();
+  clock = 31000;
+  auto.newSession();
+  assert.deepEqual([auto.status().threads, auto.status().startup], [16, null], "an expired start does not hand its old base on");
+  for (let i = 0; i < 4; i++) { clock += 2600; auto.buffer(20, true); }
+  assert.equal(auto.status().threads, 16, "and the level stays once the buffer is ahead");
+}
+console.log("btr patches: ok");
 
 // ---- languages: same keys everywhere, and code without Chinese text ----
 const lang = name => JSON.parse(fs.readFileSync(path.join(__dirname, "app", "lang", `${name}.json`), "utf8"));

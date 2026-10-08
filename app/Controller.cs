@@ -1,6 +1,7 @@
-// The controller: runs Bilibili-thread-ripper's page code (vendor/btr, unmodified) inside the official Bilibili client
-// without touching the client's files. The client runs with a loopback CDP port; the bundle is injected into its
-// player page; this class owns the settings, the takeover of clients opened without the port, and updates.
+// The controller: runs Bilibili-thread-ripper's page code (vendor/btr, with the fixes in btr-patches.cjs) inside the
+// official Bilibili client without touching the client's files. The client runs with a loopback CDP port; the bundle is
+// injected into its player page; this class owns the settings, the takeover of clients opened without the port, and
+// updates.
 // Everything here runs on the WPF dispatcher thread with async/await, like a single event loop; blocking work goes to
 // Task.Run and comes back with await.
 using System;

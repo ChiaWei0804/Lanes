@@ -6,9 +6,9 @@ Lanes is a portable Windows app that makes the official Bilibili desktop client 
 
 Bilibili videos often stuttered for me, and BTR really solved that. I didn't want it installed inside the Bilibili client, so I used Claude to build this small standalone program.
 
-**The acceleration is not Lanes' own work.** It is **[Bilibili-thread-ripper (BTR)](https://github.com/MrTangLuyao/Bilibili-thread-ripper)** by LouieTang ([MrTangLuyao](https://github.com/MrTangLuyao)). Lanes runs the page code of BTR's desktop edition, **[Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)**, unmodified, and only adds a separate window to control it. Lanes is an unofficial third-party project; BTR's author did not make or endorse it.
+**The acceleration is not Lanes' own work.** It is **[Bilibili-thread-ripper (BTR)](https://github.com/MrTangLuyao/Bilibili-thread-ripper)** by LouieTang ([MrTangLuyao](https://github.com/MrTangLuyao)). Lanes runs the page code of BTR's desktop edition, **[Bilibili-thread-ripper-desktop](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop)**, with two small fixes to its automatic thread count (listed in `btr-patches.cjs`), and only adds a separate window to control it. Lanes is an unofficial third-party project; BTR's author did not make or endorse it.
 
-**BTR version used:** Bilibili-thread-ripper-desktop **2026.9.29.1-d1** ([commit b16b10f](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop/commit/b16b10f1122cc3a942832d0baa4ab3f1b08493b3)). Lanes follows BTR's desktop edition, not the browser one.
+**BTR version used:** Bilibili-thread-ripper-desktop **2026.10.7.2-d1** ([commit 2d24de0](https://github.com/MrTangLuyao/Bilibili-thread-ripper-desktop/commit/2d24de0717df92dc0c719d601fc5b08ad392423b)). Lanes follows BTR's desktop edition, not the browser one.
 
 Lanes does not change any file of the Bilibili client, and when Lanes is closed the client downloads natively again.
 
@@ -22,7 +22,7 @@ Lanes does not change any file of the Bilibili client, and when Lanes is closed 
 ## Features
 
 - Live accelerated download speed, with a per-thread view (hover a cell to see its CDN node).
-- On/off switch and thread count: Auto (BTR picks 8–32) or 8 / 16 / 32 / 64.
+- On/off switch and thread count: Auto (BTR picks 8–64) or 8 / 16 / 32 / 64.
 - Opening Lanes never opens Bilibili. While Lanes runs, a Bilibili you open the usual way is connected automatically (it restarts once, within seconds of opening, so Lanes can attach).
 - Connects to a Bilibili that was already open before Lanes, too, by restarting it (interrupts playback). On by default; turn it off in settings.
 - Start at sign-in, keep running in the notification area when the window closes.
@@ -67,10 +67,12 @@ node check.cjs             # self-checks: Lanes.exe --self-check, then the scrip
 | `app/page/*.js` | Code injected into the player page next to BTR: page guard, lease, per-thread meter, status poll |
 | `app/SelfCheck.cs`, `check.cjs` | Self-checks |
 | `app/lang/*.json` | Interface text in English, Traditional Chinese and Simplified Chinese |
-| `vendor/btr/` | BTR 2026.9.29.1-d1 page files (commit b16b10f), unmodified, MIT license in `vendor/btr/LICENSE` |
+| `vendor/btr/` | BTR 2026.10.7.2-d1 page files (commit 2d24de0) with Lanes' fixes from `btr-patches.cjs`, MIT license in `vendor/btr/LICENSE` |
 | `version.json` | Version and the GitHub repository checked for updates |
 | `docs/` | The screenshots in this README |
 | `release-notes/` | The notes of each release |
+| `btr-patches.cjs` | Lanes' two fixes to BTR's code, applied to `vendor/btr/`; `node btr-patches.cjs` applies them again after a BTR update |
+| `tools/live-check.mjs` | Live check in the real client before a release (Lanes connected, thread count on Auto) |
 | `.github/` | Build and release workflow; daily check for BTR updates |
 
 GitHub Actions builds and checks every push (`.github/workflows/build.yml`). To publish version X.Y.Z: set it in `version.json`, write `release-notes/X.Y.Z.md`, then push the tag `vX.Y.Z`; the workflow builds `Lanes-X.Y.Z.zip` and creates the release. The in-app update downloads the same file. Once a day `.github/workflows/btr-watch.yml` opens an issue when BTR's desktop edition changes a file in `vendor/btr/`.

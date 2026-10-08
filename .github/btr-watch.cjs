@@ -13,12 +13,14 @@ const get = async (url, as) => {
 };
 const upstream = (sha, file) => get(`https://raw.githubusercontent.com/${UPSTREAM}/${sha}/${file}`);
 const lf = text => text.replace(/\r\n/g, "\n"); // a Windows checkout has CRLF
+const { apply } = require("../btr-patches.cjs"); // vendor/btr carries Lanes' patches; upstream's files get them too
 
 (async () => {
   const sha = (await get(`https://api.github.com/repos/${UPSTREAM}/commits/main`, "json")).sha, short = sha.slice(0, 7);
   const changed = [];
   for (const file of FILES) {
-    if (lf(await upstream(sha, file)) !== lf(fs.readFileSync(path.join(root, "vendor", "btr", path.basename(file)), "utf8"))) changed.push(file);
+    const name = path.basename(file);
+    if (lf(apply(name, await upstream(sha, file))) !== lf(fs.readFileSync(path.join(root, "vendor", "btr", name), "utf8"))) changed.push(file);
   }
   if (!changed.length) return console.log(`BTR desktop ${short}: vendor/btr matches, nothing to do`);
 
@@ -32,7 +34,7 @@ const lf = text => text.replace(/\r\n/g, "\n"); // a Windows checkout has CRLF
     "",
     used ? `Changes since the version Lanes uses: https://github.com/${UPSTREAM}/compare/${used}...${sha}` : "",
     "",
-    "To update: replace these files in `vendor/btr/`, bump the BTR version strings (README x3, `app/page/inject.js`), run `node build.cjs` and `node check.cjs`, and test in the real client. Close this issue once a Lanes release carries the change."
+    "To update: replace these files in `vendor/btr/`, run `node btr-patches.cjs` (drop a patch that no longer applies if BTR fixed it), bump the BTR version strings (README x3, `app/page/inject.js`), run `node build.cjs` and `node check.cjs`, and test in the real client. Close this issue once a Lanes release carries the change."
   ].join("\n");
   if (process.env.DRY_RUN) return console.log(`would open: ${title}\n\n${body}`);
 
